@@ -1,3 +1,155 @@
+ $(function(){
+	// 音乐配置
+	var audioConfig = {
+		enable: true, // 是否开启音乐
+		playURl: 'http://www.imooc.com/upload/media/happy.wav', // 正常播放地址
+		cycleURL: 'http://www.imooc.com/upload/media/circulation.wav' // 正常循环播放地址
+	};
+
+	/////////
+	//背景音乐 //
+	/////////
+	function Hmlt5Audio(url, isloop) {
+		var audio = new Audio(url);
+		audio.autoPlay = true;
+		audio.loop = isloop || false;
+		audio.play();
+		return {
+			end: function(callback) {
+				audio.addEventListener('ended', function() {
+					callback();
+				}, false);
+			}
+		};
+	}
+
+	////////////////////////////////////////////////////////
+	//=================== 动画处理 ====================== //
+	////////////////////////////////////////////////////////
+
+	var boy = BoyWalk();
+	boy.talkFlower();
+	function startRun() {
+		boy.walkTo(2000, 0.5)
+			.then(function() {
+				//暂停走路
+				boy.stopWalk()
+			})
+			.then(function() {
+				//开门
+				return openDoor();
+			})
+			.then(function() {
+				//开灯
+				lamp.bright()
+			})
+			.then(function() {
+				//进商店
+				return boy.toShop(2000)
+			}).then(function(){
+				// 取花
+				return boy.talkFlower();
+			}).then(function() {
+				// 飞鸟
+				bird.fly();
+			}).then(function() {
+				//出商店
+				return boy.outShop(2000)
+			}).then(function(){
+				// 关门
+				return shutDoor();
+			}).then(function() {
+				// 灯暗
+				lamp.dark();
+			});
+	}
+
+
+	// 开始
+	// $("button:first").click(startRun);
+	// 开始
+	// 	$("button:first").click(function() {
+	// 
+	// 		// 开始第一次走路
+	// 		boy.walkTo(2000, 0.2)
+	// 			.then(function() {
+	// 				//第一次走路完成
+	// 				// boy.setColoer('red')
+	// 				scrollTo(5000, 1);
+	// 			}).then(function() {
+	// 				//第二次走
+	// 				return boy.walkTo(5000, 0.5)
+	// 			}).then(function() {
+	// 				//第二次走路完成
+	// 				boy.setColoer('yellow')
+	// 			}).then(function() {
+	// 				//第三次走路
+	// 				return boy.walkTo(5000, 0.6)
+	// 			}).then(function() {
+	// 				//第三次走路完成
+	// 				boy.setColoer('blue')
+	// 			});
+	// 	});
+	// // 开始
+	// $("button:first").click(function() {
+	// 	// 10秒钟 ，走到0.5 也就是页面中间位置
+	// 	var distX = calculateDist('x', 0.5);
+	// 	var distY = calculateDist('y', 0.5);
+	// 	walkRun(10000, distX, distY);
+	// });
+
+
+
+
+
+	// 开门
+	// 				$("button:first").click(function() {
+	// 					 // 开门
+	// 					openDoor().then(function() {
+	// 						// 开灯
+	// 						lamp.bright();
+	// 					});
+	// 				});
+	// 
+	// 				// 关门
+	// 				$("button:last").click(function() {
+	// 					// 关门
+	// 					shutDoor().then(function() {
+	// 						// 灯灭
+	// 						lamp.dark();
+	// 					});
+	// 				});
+
+	// 开始
+	$("button:first").click(function() {
+		// 第一次走路到桥底边left,top
+		boy.walkTo(2000, 0.15)
+			.then(function() {
+				// 第二次走路到桥上left,top
+				return boy.walkTo(1500, 0.25, girl.getPosition().top / visualHeight);
+			})
+			.then(function() {
+				// 实际走路的比例
+				var proportionX = (girl.getPosition().left - boy.getWidth() + girl.getWidth() / 5) / visualWidth;
+				// 第三次桥上直走到小女孩面前
+				return boy.walkTo(1500, proportionX);
+			}).then(function() {
+				// 图片还原原地停止状态
+				boy.resetOriginal();
+			}).then(function() {
+				// 增加转身动作 
+				setTimeout(function() {
+					girl.rotate();
+					boy.rotate(function() {
+						// 开始logo动画
+						logo.run();
+						snowflake()
+					});
+				}, 1000);
+			})
+		})
+	})
+
 // 动画结束事件
 var animationEnd = (function() {
    var explorer = navigator.userAgent;
@@ -20,6 +172,14 @@ var bird = {
 	}
 };
 
+var snowflakeURl = [
+	'http://img.mukewang.com/55adde120001d34e00410041.png',
+	'http://img.mukewang.com/55adde2a0001a91d00410041.png',
+	'http://img.mukewang.com/55adde5500013b2500400041.png',
+	'http://img.mukewang.com/55adde62000161c100410041.png',
+	'http://img.mukewang.com/55adde7f0001433000410041.png',
+	'http://img.mukewang.com/55addee7000117b500400041.png'
+]
 ///////
 //飘雪花 //
 ///////
@@ -110,6 +270,7 @@ var lamp = {
  var swipe = Swipe(container);
  var visualWidth = container.width();
  var visualHeight = container.height();
+ 
  // 页面滚动到指定的位置
  function scrollTo(time, proportionX) {
 	var distX = container.width() * proportionX;
@@ -119,32 +280,22 @@ var lamp = {
  //////////
  // 用来临时调整页面
  swipe.scrollTo(visualWidth*2, 0);
- ////////
- //小女孩 //
- ////////
- var girl = {
- 	elem: $('.girl'),
- 	getHeight: function() {
- 		return this.elem.height();
- 	},
- 	// 转身动作
- 	rotate: function() {
- 		this.elem.addClass('girl-rotate');
- 	},
- 	setPosition: function() {
- 		this.elem.css({
- 			left: visualWidth / 2,
- 			top: bridgeY - this.getHeight()
- 		});
- 	},
- 	getPosition: function() {
- 		return this.elem.position();
- 	},
- 	getWidth: function() {
- 		return this.elem.width();
- 	}
- };
  
+////////
+//小女孩 //
+////////
+var girl = {
+   elem: $('.girl'),
+   getHeight: function() {
+	   return this.elem.height();
+   },
+   setOffset: function() {
+	   this.elem.css({
+		   left: visualWidth / 2,
+		   top: bridgeY - this.getHeight()
+	   });
+   }
+};
  // 修正小女孩位置
  girl.setOffset();
  
